@@ -1,0 +1,30 @@
+id: blueprint:system-mssql
+name: Microsoft SQL Server
+version: 0.1.0
+connector_provider_key: sql-mssql
+
+# Defines the fields needed to create a connection using this blueprint.
+# This drives the cx connection create interactive command.
+supported_auth_methods:
+  - type: credentials
+    display_name: "Username & Password"
+    fields:
+      - name: server
+        label: "Server Address (hostname or IP)"
+        type: detail
+      - name: database
+        label: "Database Name"
+        type: detail
+      - name: username
+        label: "Username"
+        type: secret
+      - name: password
+        label: "Password"
+        type: secret
+        is_password: true
+
+browse_config:
+  action_templates:
+    runQuery:
+      description: "Executes a SQL query against the connected database."
+      # We could later add a parameters_model here for query validation.

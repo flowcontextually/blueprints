@@ -1,8 +1,5 @@
 name: Release Blueprint Package
 
-# This workflow is triggered ONLY when a tag is pushed.
-# The tag MUST follow the convention: <namespace>-<name>-<version>
-# Example: system-mssql-v0.1.0 or community-spotify-v0.1.0
 on:
   push:
     tags:
@@ -13,48 +10,48 @@ jobs:
     name: Build and Release Blueprint
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Required to create the release and upload assets
+      contents: write
 
     steps:
       - name: Checkout code
+        # We need the code to be on disk to find and zip the directory.
         uses: actions/checkout@v4
 
       - name: Parse tag and set up variables
         id: vars
         shell: bash
         run: |
-          # The tag is available in github.ref_name, e.g., "system-mssql-v0.1.0"
           TAG=${{ github.ref_name }}
-          # Use sed to extract the parts based on our convention
           NAMESPACE=$(echo $TAG | sed -E 's/^([a-zA-Z0-9-]+)-([a-zA-Z0-9-]+)-v[0-9\.-]+$/\1/')
           NAME=$(echo $TAG | sed -E 's/^([a-zA-Z0-9-]+)-([a-zA-Z0-9-]+)-v[0-9\.-]+$/\2/')
           VERSION=$(echo $TAG | sed -E 's/^([a-zA-Z0-9-]+)-([a-zA-Z0-9-]+)-(v[0-9\.-]+)$/\3/')
 
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "namespace=$NAMESPACE" >> $GITHUB_OUTPUT
-          echo "name=$NAME" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "release_name=Blueprint: ${NAMESPACE}/${NAME}@${VERSION}" >> $GITHUB_OUTPUT
           echo "blueprint_path=${NAMESPACE}/${NAME}/${VERSION}" >> $GITHUB_OUTPUT
           echo "asset_name=${NAME}.zip" >> $GITHUB_OUTPUT
 
       - name: Verify blueprint directory exists
         run: |
-          echo "Checking for directory: ${{ steps.vars.outputs.blueprint_path }}"
           if [ ! -d "${{ steps.vars.outputs.blueprint_path }}" ]; then
-            echo "Error: Directory for tag does not exist."
+            echo "Error: Directory for tag '${{ github.ref_name }}' not found at '${{ steps.vars.outputs.blueprint_path }}'"
             exit 1
           fi
 
-      - name: Create Zip Archive of the blueprint
+      # --- THIS IS THE CRITICAL STEP ---
+      - name: Create Zip Archive of the specific blueprint
         shell: bash
         run: |
-          # Zip the contents of the directory, not the directory itself
-          cd ${{ steps.vars.outputs.blueprint_path }}
-          zip -r ../../../../${{ steps.vars.outputs.asset_name }} .
-
+          # We navigate into the directory containing the namespace (e.g., 'system/')
+          # and then zip the target directory (e.g., 'mssql/v0.1.0').
+          # This creates a zip file that contains the blueprint's content at the root.
+          cd ${{ steps.vars.outputs.namespace }}
+          zip -r ../${{ steps.vars.outputs.asset_name }} . -i "${{ steps.vars.outputs.name }}/${{ steps.vars.outputs.version }}/*"
+      # --- END CRITICAL STEP ---
       - name: Create GitHub Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
-          name: "Blueprint: ${{ steps.vars.outputs.namespace }}/${{ steps.vars.outputs.name }}@${{ steps.vars.outputs.version }}"
+          name: ${{ steps.vars.outputs.release_name }}
+          # This `files` key is what uploads our custom zip file as a release asset.
           files: ${{ steps.vars.outputs.asset_name }}

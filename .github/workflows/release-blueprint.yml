@@ -3,6 +3,8 @@ name: Release Blueprint Package
 on:
   push:
     tags:
+      # Trigger on tags that follow the convention: <namespace>-<name>-<version>
+      # e.g., system-mssql-v0.1.1 or community-spotify-v0.1.0
       - "*-*-v*"
 
 jobs:
@@ -10,33 +12,58 @@ jobs:
     name: Build and Release Blueprint
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Required to create the release and upload assets
 
     steps:
       - name: Checkout code
+        # We must check out the code to access the blueprint's source directory.
         uses: actions/checkout@v4
+
+      - name: Install yq for YAML parsing
+        # yq is a lightweight and powerful command-line YAML processor.
+        # We'll use it to safely read the version from the blueprint file.
+        run: sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
 
       - name: Parse tag and set up variables
         id: vars
         shell: bash
         run: |
           TAG=${{ github.ref_name }}
-          # Use cut for robust parsing. This is less fragile than complex regex.
-          # It splits the string by the '-' delimiter.
           NAMESPACE=$(echo $TAG | cut -d'-' -f1)
           NAME=$(echo $TAG | cut -d'-' -f2)
           VERSION=$(echo $TAG | cut -d'-' -f3)
 
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "release_name=Blueprint: ${NAMESPACE}/${NAME}@${VERSION}" >> $GITHUB_OUTPUT
-          echo "blueprint_path=${NAMESPACE}/${NAME}/${VERSION}" >> $GITHUB_OUTPUT
+          # The source path no longer contains the version.
+          echo "blueprint_path=${NAMESPACE}/${NAME}" >> $GITHUB_OUTPUT
           echo "asset_name=${NAME}.zip" >> $GITHUB_OUTPUT
+          echo "tag_version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Verify blueprint directory exists
         run: |
           echo "Verifying path: ${{ steps.vars.outputs.blueprint_path }}"
           if [ ! -d "${{ steps.vars.outputs.blueprint_path }}" ]; then
-            echo "Error: Directory for tag does not exist."
+            echo "::error::Directory for tag '${{ github.ref_name }}' not found at path '${{ steps.vars.outputs.blueprint_path }}'"
+            exit 1
+          fi
+
+      - name: Verify version consistency
+        # This is a critical safety check to prevent accidental releases.
+        shell: bash
+        run: |
+          BLUEPRINT_FILE="${{ steps.vars.outputs.blueprint_path }}/blueprint.cx.yaml"
+          echo "Checking version in ${BLUEPRINT_FILE}"
+
+          # Read the version from the YAML file using yq
+          FILE_VERSION="v$(yq e '.version' ${BLUEPRINT_FILE})"
+          TAG_VERSION="${{ steps.vars.outputs.tag_version }}"
+
+          echo "Version in tag: ${TAG_VERSION}"
+          echo "Version in file: ${FILE_VERSION}"
+
+          if [ "${FILE_VERSION}" != "${TAG_VERSION}" ]; then
+            echo "::error::Version mismatch! Git tag is '${TAG_VERSION}' but blueprint.cx.yaml version is '${FILE_VERSION}'."
             exit 1
           fi
 
@@ -46,10 +73,10 @@ jobs:
           echo "Navigating to: ${{ steps.vars.outputs.blueprint_path }}"
           cd ${{ steps.vars.outputs.blueprint_path }}
 
-          echo "Creating zip archive named ${{ steps.vars.outputs.asset_name }} with all contents of the current directory (.*)"
-          # The command `zip -r ../../../${{ steps.vars.outputs.asset_name }} .` zips all contents
-          # of the current directory into an archive placed three levels up.
-          zip -r ../../../${{ steps.vars.outputs.asset_name }} .
+          echo "Creating zip archive named ${{ steps.vars.outputs.asset_name }} from contents of current directory."
+          # Zip all contents (.) of the current directory into an archive two levels up.
+          zip -r ../../${{ steps.vars.outputs.asset_name }} .
+
       - name: Create GitHub Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:

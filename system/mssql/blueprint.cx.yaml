@@ -1,10 +1,8 @@
 id: blueprint:system-mssql
 name: Microsoft SQL Server
-version: 0.1.0
+version: 0.1.1
 connector_provider_key: sql-mssql
 
-# Defines the fields needed to create a connection using this blueprint.
-# This drives the cx connection create interactive command.
 supported_auth_methods:
   - type: credentials
     display_name: "Username & Password"
@@ -25,6 +23,11 @@ supported_auth_methods:
 
 browse_config:
   action_templates:
-    runQuery:
+    # The key is the user-facing verb the user will type.
+    query:
+      # The 'run' block is a mini, inline ConnectorStep.
+      # It explicitly tells the engine which strategy method to call.
+      run:
+        action: "run_sql_query"
+      # We can still add metadata for the completer and help system.
       description: "Executes a SQL query against the connected database."
-      # We could later add a parameters_model here for query validation.

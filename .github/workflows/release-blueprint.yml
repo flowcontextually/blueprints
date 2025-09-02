@@ -75,7 +75,7 @@ jobs:
 
           echo "Creating zip archive named ${{ steps.vars.outputs.asset_name }} from contents of current directory."
           # Zip all contents (.) of the current directory into an archive two levels up.
-          zip -r ../../${{ steps.vars.outputs.asset_name }} .
+          zip -r ../../${{ steps.vars.outputs.asset_name }} . -x "source_spec.json"
 
       - name: Create GitHub Release and Upload Asset
         uses: softprops/action-gh-release@v2

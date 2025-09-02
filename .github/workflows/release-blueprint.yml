@@ -14,7 +14,6 @@ jobs:
 
     steps:
       - name: Checkout code
-        # We need the code to be on disk to find and zip the directory.
         uses: actions/checkout@v4
 
       - name: Parse tag and set up variables
@@ -22,9 +21,11 @@ jobs:
         shell: bash
         run: |
           TAG=${{ github.ref_name }}
-          NAMESPACE=$(echo $TAG | sed -E 's/^([a-zA-Z0-9-]+)-([a-zA-Z0-9-]+)-v[0-9\.-]+$/\1/')
-          NAME=$(echo $TAG | sed -E 's/^([a-zA-Z0-9-]+)-([a-zA-Z0-9-]+)-v[0-9\.-]+$/\2/')
-          VERSION=$(echo $TAG | sed -E 's/^([a-zA-Z0-9-]+)-([a-zA-Z0-9-]+)-(v[0-9\.-]+)$/\3/')
+          # Use cut for robust parsing. This is less fragile than complex regex.
+          # It splits the string by the '-' delimiter.
+          NAMESPACE=$(echo $TAG | cut -d'-' -f1)
+          NAME=$(echo $TAG | cut -d'-' -f2)
+          VERSION=$(echo $TAG | cut -d'-' -f3)
 
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "release_name=Blueprint: ${NAMESPACE}/${NAME}@${VERSION}" >> $GITHUB_OUTPUT
@@ -33,25 +34,25 @@ jobs:
 
       - name: Verify blueprint directory exists
         run: |
+          echo "Verifying path: ${{ steps.vars.outputs.blueprint_path }}"
           if [ ! -d "${{ steps.vars.outputs.blueprint_path }}" ]; then
-            echo "Error: Directory for tag '${{ github.ref_name }}' not found at '${{ steps.vars.outputs.blueprint_path }}'"
+            echo "Error: Directory for tag does not exist."
             exit 1
           fi
 
-      # --- THIS IS THE CRITICAL STEP ---
       - name: Create Zip Archive of the specific blueprint
         shell: bash
         run: |
-          # We navigate into the directory containing the namespace (e.g., 'system/')
-          # and then zip the target directory (e.g., 'mssql/v0.1.0').
-          # This creates a zip file that contains the blueprint's content at the root.
-          cd ${{ steps.vars.outputs.namespace }}
-          zip -r ../${{ steps.vars.outputs.asset_name }} . -i "${{ steps.vars.outputs.name }}/${{ steps.vars.outputs.version }}/*"
-      # --- END CRITICAL STEP ---
+          echo "Navigating to: ${{ steps.vars.outputs.blueprint_path }}"
+          cd ${{ steps.vars.outputs.blueprint_path }}
+
+          echo "Creating zip archive named ${{ steps.vars.outputs.asset_name }} with all contents of the current directory (.*)"
+          # The command `zip -r ../../../${{ steps.vars.outputs.asset_name }} .` zips all contents
+          # of the current directory into an archive placed three levels up.
+          zip -r ../../../${{ steps.vars.outputs.asset_name }} .
       - name: Create GitHub Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
           name: ${{ steps.vars.outputs.release_name }}
-          # This `files` key is what uploads our custom zip file as a release asset.
           files: ${{ steps.vars.outputs.asset_name }}

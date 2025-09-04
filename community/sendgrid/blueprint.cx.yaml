@@ -1,6 +1,6 @@
 id: blueprint:community-sendgrid
 name: SendGrid API
-version: 0.1.0
+version: 0.2.0
 connector_provider_key: rest-declarative
 
 supported_auth_methods:
@@ -12,12 +12,37 @@ supported_auth_methods:
         type: secret
         is_password: true
 
+auth_config:
+  type: "header"
+  header_name: "Authorization"
+  value_template: "Bearer {{ secrets.sendgrid_api_key }}"
+
 browse_config:
   base_url_template: https://api.sendgrid.com
   action_templates:
-    send_email_with_html:
+    send_email:
       http_method: POST
       api_endpoint: /v3/mail/send
-      description: "Sends an email with HTML content and attachments."
+      description: "Sends a rich email with to, cc, bcc, and attachments."
+
       payload_constructor:
-        _constructor: schemas.SendGridMailPayload
+        # 1. The target Pydantic model to build and validate against.
+        _model: schemas.SendGridMailPayload
+
+        # 2. A declarative mapping from the model's fields to the user's context.
+        _mapping:
+          # The engine will build a list containing one 'Personalization' object.
+          personalizations:
+            - to: "{{ context.to_emails }}"
+              cc: "{{ context.cc_emails }}"
+              bcc: "{{ context.bcc_emails }}"
+              subject: "{{ context.subject }}"
+
+          # The engine knows the 'from' field is an EmailObject and will construct it.
+          from:
+            email: "{{ context.from_email }}"
+            name: "{{ context.from_name }}"
+
+          # The engine has special handlers for content and attachments.
+          content: "{{ context.html_body_path }}"
+          attachments: "{{ context.attachment_paths }}"

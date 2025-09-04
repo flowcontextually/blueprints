@@ -1,9 +1,8 @@
-# Schemas for the SendGrid v3 Mail Send endpoint
-from __future__ import annotations
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
 
+# Define base/component models FIRST, so they exist when the composite model is defined.
 class EmailObject(BaseModel):
     """Represents an email address with an optional name."""
 
@@ -30,26 +29,22 @@ class Attachment(BaseModel):
 
 
 class Personalization(BaseModel):
-    """Defines the recipients (to, cc, bcc) and subject for an email envelope."""
+    """Defines recipients and subject for an email envelope."""
 
     to: List[EmailObject]
     cc: Optional[List[EmailObject]] = None
-    bcc: Optional[List[EmailObject]] = None  # Added for completeness
+    bcc: Optional[List[EmailObject]] = None
     subject: str
 
 
+# Define the final, top-level model LAST.
 class SendGridMailPayload(BaseModel):
-    """
-    The top-level Pydantic model for the SendGrid v3 Mail Send API.
-    This is the model that the engine will build and validate against.
-    """
+    """The top-level Pydantic model for the SendGrid v3 Mail Send API."""
 
     personalizations: List[Personalization]
-    # The 'alias' is critical because 'from' is a reserved keyword in Python.
     from_email: EmailObject = Field(..., alias="from")
     content: List[Content]
     attachments: Optional[List[Attachment]] = None
 
     class Config:
-        # Allows using 'from_email' in Python code while serializing to 'from' in JSON.
         populate_by_name = True

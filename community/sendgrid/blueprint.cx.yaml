@@ -1,0 +1,23 @@
+id: blueprint:community-sendgrid
+name: SendGrid API
+version: 0.1.0
+connector_provider_key: rest-declarative
+
+supported_auth_methods:
+  - type: api_key
+    display_name: "API Key Authentication"
+    fields:
+      - name: sendgrid_api_key
+        label: "SendGrid API Key"
+        type: secret
+        is_password: true
+
+browse_config:
+  base_url_template: https://api.sendgrid.com
+  action_templates:
+    send_email_with_html:
+      http_method: POST
+      api_endpoint: /v3/mail/send
+      description: "Sends an email with HTML content and attachments."
+      payload_constructor:
+        _constructor: schemas.SendGridMailPayload

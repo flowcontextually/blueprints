@@ -29,13 +29,17 @@ jobs:
         shell: bash
         run: |
           TAG=${{ github.ref_name }}
-          NAMESPACE=$(echo $TAG | cut -d'-' -f1)
-          NAME=$(echo $TAG | cut -d'-' -f2)
-          VERSION=$(echo $TAG | cut -d'-' -f3)
+
+          # Robustly parse the tag
+          NAMESPACE=$(echo "$TAG" | cut -d'-' -f1)
+          VERSION=$(echo "$TAG" | rev | cut -d'-' -f1 | rev)
+
+          # Extract the name by removing the namespace prefix and version suffix
+          TMP=${TAG#"$NAMESPACE"-} # Remove "namespace-" from the beginning
+          NAME=${TMP%-"$VERSION"}    # Remove "-version" from the end
 
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "release_name=Blueprint: ${NAMESPACE}/${NAME}@${VERSION}" >> $GITHUB_OUTPUT
-          # The source path no longer contains the version.
           echo "blueprint_path=${NAMESPACE}/${NAME}" >> $GITHUB_OUTPUT
           echo "asset_name=${NAME}.zip" >> $GITHUB_OUTPUT
           echo "tag_version=${VERSION}" >> $GITHUB_OUTPUT

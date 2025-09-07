@@ -1,6 +1,6 @@
 id: "blueprint:system-anthropic"
 name: "Anthropic Claude API"
-version: "1.0.0"
+version: "1.1.0"
 connector_provider_key: "rest-declarative"
 
 supported_auth_methods:
@@ -12,18 +12,19 @@ supported_auth_methods:
         type: "secret"
         is_password: true
 
+auth_config:
+  type: "header"
+  header_name: "x-api-key" # Provider-specific header name
+  value_template: "{{ secrets.api_key }}"
+  # Anthropic requires additional, non-auth headers.
+  additional_headers:
+    - name: "anthropic-version"
+      value_template: "2023-06-01"
+    - name: "content-type"
+      value_template: "application/json"
+
 browse_config:
   base_url_template: "https://api.anthropic.com/v1"
-  auth_config:
-    type: "header"
-    header_name: "x-api-key" # Provider-specific header name
-    value_template: "{{ secrets.api_key }}"
-    # Anthropic requires additional, non-auth headers.
-    additional_headers:
-      - name: "anthropic-version"
-        value_template: "2023-06-01"
-      - name: "content-type"
-        value_template: "application/json"
 
   action_templates:
     createMessage:

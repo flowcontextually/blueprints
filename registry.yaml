@@ -1,0 +1,39 @@
+# The master index of all discoverable blueprints for the Contextually platform.
+# This file is used by the `cx connection create` wizard.
+
+blueprints:
+  - id: "community/github"
+    name: "GitHub API (Starter)"
+    version: "0.1.0"
+    description: "A starter blueprint for the public GitHub API, providing basic user lookup."
+    tags: [git, devops, source control]
+
+  - id: "community/openai"
+    name: "OpenAI API"
+    version: "1.0.0"
+    description: "Connect to the OpenAI API for models like GPT-4 and GPT-5."
+    tags: [ai, llm, generative]
+
+  - id: "community/anthropic"
+    name: "Anthropic Claude API"
+    version: "1.0.0"
+    description: "Connect to the Anthropic API for Claude models."
+    tags: [ai, llm, generative]
+
+  - id: "community/google-gemini"
+    name: "Google Gemini API"
+    version: "1.0.0"
+    description: "Connect to the Google AI Studio API for Gemini models."
+    tags: [ai, llm, generative]
+
+  - id: "community/sendgrid"
+    name: "SendGrid API"
+    version: "0.3.0"
+    description: "Send rich, transactional emails via the SendGrid v3 API."
+    tags: [email, notifications, communication]
+
+  - id: "system/mssql"
+    name: "Microsoft SQL Server"
+    version: "0.1.1"
+    description: "Provides connectivity and query capabilities for Microsoft SQL Server."
+    tags: [database, sql, microsoft]

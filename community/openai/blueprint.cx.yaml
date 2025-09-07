@@ -1,6 +1,6 @@
 id: "blueprint:system-openai"
 name: "OpenAI API"
-version: "1.0.0"
+version: "1.1.0"
 connector_provider_key: "rest-declarative"
 
 # Defines the fields for the interactive `cx connection create` wizard.
@@ -13,15 +13,15 @@ supported_auth_methods:
         type: "secret"
         is_password: true
 
+# Tells the strategy how to authenticate using the secret from `supported_auth_methods`.
+auth_config:
+  type: "header"
+  header_name: "Authorization"
+  value_template: "Bearer {{ secrets.api_key }}"
+
 # Defines the runtime behavior for the DeclarativeRestStrategy.
 browse_config:
   base_url_template: "https://api.openai.com/v1"
-
-  # Tells the strategy how to authenticate using the secret from `supported_auth_methods`.
-  auth_config:
-    type: "header"
-    header_name: "Authorization"
-    value_template: "Bearer {{ secrets.api_key }}"
 
   # Defines the actions available to the user (and the agent).
   action_templates:

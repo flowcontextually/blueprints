@@ -31,6 +31,7 @@ These are core blueprints maintained directly by the Contextually team.
 | Blueprint                         | Latest Version | Description                                                            |
 | :-------------------------------- | :------------- | :--------------------------------------------------------------------- |
 | [`system/mssql`](./system/mssql/) | `v0.1.1`       | Provides connectivity and query capabilities for Microsoft SQL Server. |
+| [`system/browser`](./system/browser/) | `v1.0.0`       | A core provider for controlling a local web browser for UI automation. |
 
 ### Community Blueprints (`community/`)
 

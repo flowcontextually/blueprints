@@ -37,3 +37,10 @@ blueprints:
     version: "0.1.1"
     description: "Provides connectivity and query capabilities for Microsoft SQL Server."
     tags: [database, sql, microsoft]
+
+  - id: "system/browser"
+    name: "Web Browser Session"
+    version: "1.0.0"
+    description: "A core system provider for controlling a local web browser to enable UI automation."
+    tags: [automation, browser, ui-testing, system]
+
